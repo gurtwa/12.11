@@ -10,44 +10,50 @@ document.getElementById('byQueryBtn')?.addEventListener('click', async function 
     resultContainer.innerHTML = '';
     spinner.style.visibility = 'visible';
 
-    let data: any;
-    interface Character {
+    let data: { results: ICharacter[] | IPlanet[] | ISpecies[] } | null = null;
+
+    interface ICharacter {
         name: string;
-        height: number;
-        mass: number;
+        height: string;
+        mass: string;
         hair_color: string;
         skin_color: string;
         eye_color: string;
         birth_year: string;
         gender: string;
+        homeworld: string;
         species: string[];
         films: string[];
         created: string;
         edited: string;
-        film: string[];
     }
-    interface planets {
-        Name:string;
-        Period:number;
-        Diameter:number;
-        Climate:string;
-        Gravity:string;
-        Terrain:string;
-        Population:number;
-    }
-    interface species {
-        Name: string;
-        Classification: string;
-        Designation: string;
-        AverageHeight: number;
-        SkinColors: string[];
-        HairColors: string[];
-        EyeColors: string[];
-        AverageLifespan: number;
-        Language: string[];
-    }
-    try {
 
+    interface IPlanet {
+        name: string;
+        rotation_period: string;
+        orbital_period: string;
+        diameter: string;
+        climate: string;
+        gravity: string;
+        terrain: string;
+        population: string;
+        films: string[];
+    }
+
+    interface ISpecies {
+        name: string;
+        classification: string;
+        designation: string;
+        average_height: string;
+        skin_colors: string;
+        hair_colors: string;
+        eye_colors: string;
+        average_lifespan: string;
+        language: string;
+        homeworld: string | null;
+    }
+
+    try {
         if (resourceSelect === 'characters') {
             data = await starWars.searchCharacters(query);
         } else if (resourceSelect === 'planets') {
@@ -62,12 +68,11 @@ document.getElementById('byQueryBtn')?.addEventListener('click', async function 
             resultBlock.style.visibility = 'visible';
             resultBlock.style.zIndex = '10';
 
-
             if (resourceSelect === 'characters') {
-                for (const character of data.results) {
+                for (const character of data.results as ICharacter[]) {
                     const planetId = character.homeworld.split('/').filter(Boolean).pop();
                     try {
-                        const planetData = await starWars.getPlanetsById(planetId);
+                        const planetData: IPlanet = await starWars.getPlanetsById(planetId);
                         const planetName = planetData.name;
                         const characterInfo = `
                             <p><strong>Name:</strong> ${character.name}</p>
@@ -82,7 +87,7 @@ document.getElementById('byQueryBtn')?.addEventListener('click', async function 
                             <p><strong>Species:</strong> ${character.species.length > 0 ? `<a href="${character.species[0]}">View Species</a>` : 'Unknown'}</p>
                             <p><strong>Films:</strong></p>
                             <ul>
-                                ${character.films.map((film:string) => `<li><a href="${film}">View Film</a></li>`).join('')}
+                                ${character.films.map((film: string) => `<li><a href="${film}">View Film</a></li>`).join('')}
                             </ul>
                             <p><strong>Created:</strong> ${new Date(character.created).toLocaleDateString()}</p>
                             <p><strong>Edited:</strong> ${new Date(character.edited).toLocaleDateString()}</p>
@@ -93,10 +98,8 @@ document.getElementById('byQueryBtn')?.addEventListener('click', async function 
                         resultContainer.innerHTML += `<p>Error fetching planet data for ${character.name}</p>`;
                     }
                 }
-            }
-
-            else if (resourceSelect === 'planets') {
-                data.results.forEach((planet: any) => {
+            } else if (resourceSelect === 'planets') {
+                for (const planet of data.results as IPlanet[]) {
                     const planetInfo = `
                         <p><strong>Name:</strong> ${planet.name}</p>
                         <p><strong>Rotation Period:</strong> ${planet.rotation_period}</p>
@@ -112,10 +115,9 @@ document.getElementById('byQueryBtn')?.addEventListener('click', async function 
                         </ul>
                     `;
                     resultContainer.innerHTML += planetInfo;
-                });
-            }
-            else if (resourceSelect === 'species') {
-                data.results.forEach((species: any) => {
+                }
+            } else if (resourceSelect === 'species') {
+                for (const species of data.results as ISpecies[]) {
                     const speciesInfo = `
                         <p><strong>Name:</strong> ${species.name}</p>
                         <p><strong>Classification:</strong> ${species.classification}</p>
@@ -129,7 +131,7 @@ document.getElementById('byQueryBtn')?.addEventListener('click', async function 
                         <p><strong>Homeworld:</strong> ${species.homeworld ? `<a href="${species.homeworld}">View Homeworld</a>` : 'Unknown'}</p>
                     `;
                     resultContainer.innerHTML += speciesInfo;
-                });
+                }
             }
         } else {
             resultContainer.innerHTML = '<p>No results found.</p>';
